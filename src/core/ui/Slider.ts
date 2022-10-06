@@ -22,9 +22,9 @@ export default class Slider extends Phaser.Events.EventEmitter {
   private _enable = false
   private _value = 0
   private _animatable = false
-  max = 1
+  max = 100
   min = 0
-  step = 0.01
+  step = 1
   orientation?: 'x' | 'y' | undefined
   scene: Phaser.Scene
   axisRotation: number = 0

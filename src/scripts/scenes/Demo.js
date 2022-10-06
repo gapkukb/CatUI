@@ -55,9 +55,9 @@ export default class Demo extends Phaser.Scene {
         y: img.y
       }
     ))
-    // setTimeout(() => {
-    //   slider.setValue(50)
-    // }, 1000)
+    setTimeout(() => {
+      slider.setValue(50)
+    }, 1000)
 
     // setTimeout(() => {
     //   slider.value = 50
