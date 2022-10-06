@@ -5,6 +5,7 @@ const RotateAroundDistance = Phaser.Math.RotateAroundDistance
 const Clamp = Phaser.Math.Clamp
 const Linear = Phaser.Math.Linear
 const Percent = Phaser.Math.Percent
+const FromPercent = Phaser.Math.FromPercent
 
 export interface SliderProps {
   enable: boolean
@@ -17,8 +18,8 @@ export interface SliderProps {
 }
 
 type Vector2Like = Required<Phaser.Types.Math.Vector2Like>
-
 export default class Slider extends Phaser.Events.EventEmitter {
+  #tween: Phaser.Tweens.Tween
   #enable = false
   #value = 0
   #animatable = false
@@ -64,23 +65,42 @@ export default class Slider extends Phaser.Events.EventEmitter {
     this.thumb.scene.input.setDraggable(this.thumb, e)
   }
 
-  get value() {
+  get percent() {
     return this.#value
   }
 
-  set value(newValue: number) {
+  set percent(newValue: number) {
     newValue = Clamp(newValue, 0, 1)
     if (newValue === this.#value) return
-    const oldValue = this.#value
+    const oldValue = FromPercent(this.#value, this.min, this.max)
     this.#value = newValue
     this.updatePosition()
-    this.emit('change', newValue, oldValue)
+    this.emit('change', this.value, oldValue, this.percent)
+  }
+
+  get value() {
+    return FromPercent(this.percent, this.min, this.max)
+  }
+
+  set value(n: number) {
+    this.percent = Percent(n, this.min, this.max)
   }
 
   boot() {
     this.enable = true
     this.thumb.scene.input.dragTimeThreshold = 1000 / 30
     this.thumb.on(Phaser.Input.Events.DRAG, this.dragHandler, this)
+    this.tween = this.thumb.scene.tweens
+      .add({
+        targets: this.thumb,
+        duration: 300,
+        ease: 'Cubic.easeOut',
+        ...this.animate,
+        x: 0,
+        y: 0,
+        paused: true
+      })
+      .stop()
   }
 
   setValue(newValue: number) {
@@ -121,22 +141,15 @@ export default class Slider extends Phaser.Events.EventEmitter {
   updatePosition() {
     const x = Linear(this.startPoint.x, this.endPoint.x, this.#value)
     const y = Linear(this.startPoint.y, this.endPoint.y, this.#value)
-
     if (this.#animatable) {
-      const tween = this.thumb.scene.tweens.add({
+      this.thumb.scene.tweens.add({
         targets: this.thumb,
         duration: 300,
         ease: 'Cubic.easeOut',
         ...this.animate,
-        props: {
-          x,
-          y
-        }
+        x,
+        y
       })
-      tween.stop()
-      this.#animatable = false
-    } else {
-      this.thumb.setPosition(x, y)
     }
     return this
   }
@@ -172,6 +185,6 @@ export default class Slider extends Phaser.Events.EventEmitter {
     if (start.x > end.x || start.y > end.y) {
       value = 1 - value
     }
-    this.value = value
+    this.percent = value
   }
 }
