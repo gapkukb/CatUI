@@ -19,13 +19,12 @@ export interface SliderProps {
 
 type Vector2Like = Required<Phaser.Types.Math.Vector2Like>
 export default class Slider extends Phaser.Events.EventEmitter {
-  #tween: Phaser.Tweens.Tween
-  #enable = false
-  #value = 0
-  #animatable = false
-  max = 100
+  private _enable = false
+  private _value = 0
+  private _animatable = false
+  max = 1
   min = 0
-  step = 1
+  step = 0.01
   orientation?: 'x' | 'y' | undefined
   scene: Phaser.Scene
   axisRotation: number = 0
@@ -50,61 +49,47 @@ export default class Slider extends Phaser.Events.EventEmitter {
     this.setEndPoints(startPoint, endPoint)
     this.boot()
   }
-
+  get precision() {
+    const decimal = this.step.toString().split('.')[1]
+    return decimal ? Math.pow(10, decimal.length) : 1
+  }
   get isDragaing() {
     return this.thumb.input.dragState > 0
   }
 
   get enable() {
-    return this.#enable
+    return this._enable
   }
 
   set enable(e: boolean) {
-    if (this.#enable === e) return
-    this.#enable = e
+    if (this._enable === e) return
+    this._enable = e
     this.thumb.scene.input.setDraggable(this.thumb, e)
   }
 
-  get percent() {
-    return this.#value
-  }
-
-  set percent(newValue: number) {
-    newValue = Clamp(newValue, 0, 1)
-    if (newValue === this.#value) return
-    const oldValue = FromPercent(this.#value, this.min, this.max)
-    this.#value = newValue
-    this.updatePosition()
-    this.emit('change', this.value, oldValue, this.percent)
-  }
-
   get value() {
-    return FromPercent(this.percent, this.min, this.max)
+    return this._value
   }
 
-  set value(n: number) {
-    this.percent = Percent(n, this.min, this.max)
+  set value(newValue: number) {
+    newValue = Clamp(newValue, this.min, this.max)
+    newValue = Math.round(newValue / this.step) * this.step
+    //精度漂移
+    newValue = Math.floor(newValue * this.precision) / this.precision
+    if (newValue === this._value) return
+    const oldValue = this._value
+    this._value = newValue
+    this.updatePosition()
+    this.emit('change', newValue, oldValue, this.value)
   }
 
   boot() {
     this.enable = true
-    this.thumb.scene.input.dragTimeThreshold = 1000 / 30
     this.thumb.on(Phaser.Input.Events.DRAG, this.dragHandler, this)
-    this.tween = this.thumb.scene.tweens
-      .add({
-        targets: this.thumb,
-        duration: 300,
-        ease: 'Cubic.easeOut',
-        ...this.animate,
-        x: 0,
-        y: 0,
-        paused: true
-      })
-      .stop()
   }
 
   setValue(newValue: number) {
-    this.#animatable = this.animate !== false
+    this._animatable = this.animate !== false
     this.value = newValue
     return this
   }
@@ -115,7 +100,7 @@ export default class Slider extends Phaser.Events.EventEmitter {
   }
 
   toggleEnable() {
-    this.enable = !this.#enable
+    this.enable = !this._enable
     return this
   }
 
@@ -139,9 +124,11 @@ export default class Slider extends Phaser.Events.EventEmitter {
   }
 
   updatePosition() {
-    const x = Linear(this.startPoint.x, this.endPoint.x, this.#value)
-    const y = Linear(this.startPoint.y, this.endPoint.y, this.#value)
-    if (this.#animatable) {
+    const value = Percent(this._value, this.min, this.max)
+    const x = Linear(this.startPoint.x, this.endPoint.x, value)
+    const y = Linear(this.startPoint.y, this.endPoint.y, value)
+
+    if (this._animatable) {
       this.thumb.scene.tweens.add({
         targets: this.thumb,
         duration: 300,
@@ -150,6 +137,8 @@ export default class Slider extends Phaser.Events.EventEmitter {
         x,
         y
       })
+    } else {
+      this.thumb.setPosition(x, y)
     }
     return this
   }
@@ -185,6 +174,6 @@ export default class Slider extends Phaser.Events.EventEmitter {
     if (start.x > end.x || start.y > end.y) {
       value = 1 - value
     }
-    this.percent = value
+    this.value = FromPercent(value, this.min, this.max)
   }
 }

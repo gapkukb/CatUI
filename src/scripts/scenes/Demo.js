@@ -55,13 +55,13 @@ export default class Demo extends Phaser.Scene {
         y: img.y
       }
     ))
-    setTimeout(() => {
-      slider.setValue(50)
-    }, 1000)
+    // setTimeout(() => {
+    //   slider.setValue(50)
+    // }, 1000)
 
-    setTimeout(() => {
-      slider.value = 50
-    }, 2000)
+    // setTimeout(() => {
+    //   slider.value = 50
+    // }, 2000)
     this.add.existing(slider)
     this.add.graphics().lineStyle(3, 0x55ff55, 1).strokePoints([slider.startPoint, slider.endPoint])
     this.text = this.add.text(0, 0, '', { fontSize: '20px' })
