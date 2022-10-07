@@ -1,6 +1,8 @@
-import Slider from '../../core/ui/Slider'
-import Slider2 from '../../../uidemo/phaser3-rex-notes/plugins/input/slider/Slider'
-
+import Scroller from '../../core/Scroller/Scroller'
+import Scroller2 from '../../../uidemo/phaser3-rex-notes/plugins/input/scroller/Scroller'
+const pad = Phaser.Utils.String.Pad
+const slidingDeceleration = 5000
+const backDeceleration = 2000
 export default class Demo extends Phaser.Scene {
   constructor() {
     super({
@@ -15,73 +17,111 @@ export default class Demo extends Phaser.Scene {
       true
     )
   }
-  new(x, y, width, height) {
-    const img = this.add.rectangle(x, y, 40, 40, 0xffffff)
-    const slider = (this.slider1 = new Slider(
-      img,
-      {
-        x: img.x,
-        y: img.y
-      },
-      {
-        x: img.x + width,
-        y: img.y + height
-      },
-      {
-        min: 50,
-        max: 150
+
+  new1() {
+    var x = 200,
+      y = 300,
+      w = 300,
+      h = 400
+    var topY = y - h / 2,
+      leftX = x - w / 2
+    var bg = this.add
+      .graphics()
+      .setPosition(leftX, topY)
+      .fillStyle(0x000033, 1)
+      .fillRect(0, 0, w, h)
+      .setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
+
+    var s = ''
+    for (var i = 0, cnt = 300; i < cnt; i++) {
+      s += pad(i.toString(), 4, '0', 1)
+      if (i < cnt - 1) {
+        s += '\n'
       }
-    ))
-    this.add.existing(slider)
-    this.add.graphics().lineStyle(3, 0x55ff55, 1).strokePoints([slider.startPoint, slider.endPoint])
-    const text = this.add.text(0, 0, '', {
-      fontSize: '20px'
-    })
-    return {
-      slider,
-      text
     }
-  }
-  create() {
-    const img = this.add.rectangle(700, 200, 40, 40, 0xffffff)
-    const slider = (this.slider = new Slider(
-      img,
-      {
-        x: img.x,
-        y: img.y
-      },
-      {
-        x: img.x + 200,
-        y: img.y
+
+    var txt = this.add.text(leftX, topY, s, {})
+    txt.setMask(bg.createGeometryMask())
+
+    var topBound = topY,
+      bottomBound
+    var contentHieght = txt.height
+    if (contentHieght > h) {
+      // over a page
+      bottomBound = topY - contentHieght + h
+    } else {
+      bottomBound = topY
+    }
+
+    this.scroller = new Scroller(bg, {
+      bounds: [bottomBound, topBound],
+      value: topBound,
+      slidingDeceleration: slidingDeceleration,
+      backDeceleration: backDeceleration,
+
+      valuechangeCallback: function (newValue) {
+        txt.y = newValue
       }
-    ))
-    setTimeout(() => {
-      slider.setValue(50)
-    }, 1000)
-
-    // setTimeout(() => {
-    //   slider.value = 50
-    // }, 2000)
-    this.add.existing(slider)
-    this.add.graphics().lineStyle(3, 0x55ff55, 1).strokePoints([slider.startPoint, slider.endPoint])
-    this.text = this.add.text(0, 0, '', { fontSize: '20px' })
+    })
+    this.add.existing(this.scroller)
+    this.scrollerState = this.add.text(0, 0, '123')
   }
 
-  update() {
-    // if (this.cursorKeys.left.isDown) {
-    //   this.slider1.value -= 0.01
-    //   this.slider2.value -= 0.01
-    //   this.slider3.value -= 0.01
-    //   this.slider4.value -= 0.01
-    // } else if (this.cursorKeys.right.isDown) {
-    //   this.slider1.value += 0.01
-    //   this.slider2.value += 0.01
-    //   this.slider3.value += 0.01
-    //   this.slider4.value += 0.01
-    // }
-    this.text.setText(this.slider.value)
-    // this.text2.setText(this.slider2.value)
-    // this.text3.setText(this.slider3.value)
-    // this.text4.setText(this.slider4.value)
+  new2() {
+    var x = 600,
+      y = 300,
+      w = 300,
+      h = 400
+    var topY = y - h / 2,
+      leftX = x - w / 2
+    var bg = this.add
+      .graphics()
+      .setPosition(leftX, topY)
+      .fillStyle(0x000033, 1)
+      .fillRect(0, 0, w, h)
+      .setInteractive(new Phaser.Geom.Rectangle(0, 0, w, h), Phaser.Geom.Rectangle.Contains)
+
+    var s = ''
+    for (var i = 0, cnt = 300; i < cnt; i++) {
+      s += pad(i.toString(), 4, '0', 1)
+      if (i < cnt - 1) {
+        s += '\n'
+      }
+    }
+
+    var txt = this.add.text(leftX, topY, s, {})
+    txt.setMask(bg.createGeometryMask())
+
+    var topBound = topY,
+      bottomBound
+    var contentHieght = txt.height
+    if (contentHieght > h) {
+      // over a page
+      bottomBound = topY - contentHieght + h
+    } else {
+      bottomBound = topY
+    }
+
+    this.scroller2 = new Scroller2(bg, {
+      bounds: [bottomBound, topBound],
+      value: topBound,
+      slidingDeceleration: slidingDeceleration,
+      backDeceleration: backDeceleration,
+
+      valuechangeCallback: function (newValue) {
+        txt.y = newValue
+      }
+    })
+    this.add.existing(this.scroller2)
+    this.scrollerState2 = this.add.text(500, 0, '')
+  }
+
+  create() {
+    this.new1()
+    this.new2()
+  }
+  update(time, delta) {
+    // this.scrollerState.text = this.scroller.status + '\n' + this.scroller.value
+    this.scrollerState2.text = this.scroller2.state + '\n' + this.scroller2.value
   }
 }
