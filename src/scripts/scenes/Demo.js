@@ -121,7 +121,7 @@ export default class Demo extends Phaser.Scene {
     this.new2()
   }
   update(time, delta) {
-    // this.scrollerState.text = this.scroller.status + '\n' + this.scroller.value
+    this.scrollerState.text = this.scroller.status + '\n' + this.scroller.value + '\n' + this.scroller.dragManager.state
     this.scrollerState2.text = this.scroller2.state + '\n' + this.scroller2.value
   }
 }

@@ -7,7 +7,6 @@ export abstract class Component extends Phaser.GameObjects.GameObject {
     const scene = getScene(parent)
     super(scene, name)
     this.parent = parent
-    console.log(this.shutdown)
   }
   protected _enable = true
   parent: TParent

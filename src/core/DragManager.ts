@@ -2,17 +2,21 @@ import { Component } from './Component'
 import { PointerEvent } from './typing'
 import getLoopDelta from './utils/sys/get-loop-delta'
 
-export interface DragSpeedProps {
+export interface DragManagerProps {
+  interactive: boolean
   enable: boolean
   holdThreshold: number
-  pointerOutReleaseEnable: boolean
+  /** 拖动时超过边界是否继续保持拖动状态，
+   * - true -  拖动状态被释放，
+   * - false - 继续保持拖动状态 */
+  releasableOnOut: boolean
 }
-
+let flag = false
 /**
  * 逻辑组件，只负责触发触摸事件并计算触摸方向和速度
  */
-export default class DragSpeed extends Component {
-  constructor(component: Phaser.GameObjects.GameObject, props: Partial<DragSpeedProps>) {
+export default class DragManager extends Component {
+  constructor(component: Phaser.GameObjects.GameObject, props: Partial<DragManagerProps>) {
     super(component, 'DragSpeed')
     Object.assign(this, props)
     component.setInteractive()
@@ -82,11 +86,10 @@ export default class DragSpeed extends Component {
   }
 
   private pointerDownHandler: PointerEvent = (pointer, x, y, e) => {
-    console.log(1111111111111)
-
+    flag = true
     if (!this.enable) return
     if (!pointer.isDown) return
-    if (!this.pointer) return
+    if (this.pointer) return
 
     this.pointer = pointer
     this.localX = x
@@ -108,6 +111,10 @@ export default class DragSpeed extends Component {
     if (!this.enable) return
     const pointer = this.pointer
     this.justMoved = false
+    if (flag) {
+      flag = false
+      //   debugger
+    }
     if (pointer && !this.isTouching) {
       // 触摸开始
       this.x = this.prevX = pointer.worldX

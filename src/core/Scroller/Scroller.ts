@@ -1,5 +1,5 @@
 import { Component } from '../Component'
-import DragSpeed from '../DragSpeed'
+import DragManager from '../DragManager'
 import SlowDown from '../SlowDown'
 import State from './State'
 
@@ -25,29 +25,36 @@ export interface ScrollerProps {
   slidingDeceleration: number
   /** -  触底触顶回弹得阻尼(减速)系数 */
   backDeceleration: number
+  onValueChange(value: number, oldValue: number): any
+  onOverMax(value: number, oldValue: number): any
+  onOverMin(value: number, oldValue: number): any
+  interactive: boolean
 }
 
 export default class Scroller extends Component {
-  constructor(component: Phaser.GameObjects.GameObject, props?: Partial<ScrollerProps>) {
+  constructor(component: Phaser.GameObjects.GameObject, props: Partial<ScrollerProps> = {}) {
     super(component, 'scroller')
     Object.assign(this, props)
-    const dragConfig = {
-      input: undefined,
-      enable: props?.enable ?? true,
-      releaseOnOut: props?.enable ?? true
-    }
+    this._state = new State(this, {
+      enable: this.enable
+    })
 
-    this.dragState = new DragSpeed(component, dragConfig)
+    this.dragManager = new DragManager(component, {
+      interactive: props.interactive,
+      enable: this._enable,
+      releasableOnOut: props.enable ?? true
+    })
     this._slowDown = new SlowDown()
+    props.onValueChange && this.on('valuechange', props.onValueChange)
+    props.onOverMin && this.on('overmin', props.onOverMin)
+    props.onOverMax && this.on('overmax', props.onOverMax)
     this.scene.sys.events.on('preupdate', this._state.update, this._state)
   }
-  private _state: any = new State(this, {
-    enable: this.enable
-  })
+  private _state: State
   private _slowDown: SlowDown
   private _value = 0
-  dragConfig: any
-  dragState: DragSpeed
+  dragProps: any
+  dragManager: DragManager
   mode: Mode = 'y'
   threshold = 10
   slidingDeceleration = 5000
@@ -59,7 +66,7 @@ export default class Scroller extends Component {
   set enable(e: boolean) {
     super.setEnable(e)
     this._state.setEnable(e)
-    this.dragState.setEnable(e)
+    this.dragManager.setEnable(e)
   }
 
   get value() {
@@ -69,8 +76,15 @@ export default class Scroller extends Component {
   set value(value: number) {
     if (value === this._value) return
     const oldValue = this._value
-
+    if (this.overMax(value)) {
+      this.emit('overmax', value, oldValue)
+      !this.backEnable && (value = this.maxValue)
+    } else if (this.overMin(value)) {
+      this.emit('overmin', value, oldValue)
+      !this.backEnable && (value = this.minValue)
+    }
     this._value = value
+    this.emit('valuechange', value, oldValue)
   }
 
   get status() {
@@ -78,7 +92,7 @@ export default class Scroller extends Component {
   }
 
   get isDragging() {
-    return this.dragState.isTouching
+    return this.dragManager.isTouching
   }
 
   get outOfMaxBound() {
@@ -111,20 +125,20 @@ export default class Scroller extends Component {
 
   get dragDelta() {
     if (this.mode === 'x') {
-      return this.dragState.dx
+      return this.dragManager.dx
     }
     if (this.mode === 'y') {
-      return this.dragState.dy
+      return this.dragManager.dy
     }
     return 0
   }
 
-  get DragSpeed() {
+  get dragSpeed() {
     if (this.mode === 'x') {
-      return this.dragState.speedX
+      return this.dragManager.speedX
     }
     if (this.mode === 'y') {
-      return this.dragState.speedY
+      return this.dragManager.speedY
     }
     return 0
   }
@@ -154,12 +168,16 @@ export default class Scroller extends Component {
     this.backDeceleration = deceleration
     return this
   }
-  setValue(value: number, clamp: boolean = false) {
+  setValue(value: number, clamp = false) {
     if (clamp) {
       value = Phaser.Math.Clamp(value, this.minValue, this.maxValue)
     }
     this.value = value
     return this
+  }
+
+  addValue(inc: number, clamp = false) {
+    this.setValue(this.value + inc, clamp)
   }
 
   setBounds(values: number[]): this
@@ -198,7 +216,7 @@ export default class Scroller extends Component {
   //enter_SLIDE
   onSliding() {
     const start = this.value
-    const speed = this.DragSpeed
+    const speed = this.dragSpeed
     if (speed === 0) {
       this._slowDown.stop()
       this._state.next()

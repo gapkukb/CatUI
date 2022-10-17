@@ -60,7 +60,7 @@ export default class FSM extends Phaser.Events.EventEmitter {
     this._stateLock = true
     this.emit('statechange', this)
 
-    if (this._prevState !== null) {
+    if (this._prevState != null) {
       const exitEventName = `exit_${this._prevState}`
       const callback = this[exitEventName]
       callback?.call(this)
@@ -69,10 +69,10 @@ export default class FSM extends Phaser.Events.EventEmitter {
 
     this._stateLock = false
 
-    if (this._state !== null) {
+    if (this._state != null) {
       const enterEventName = `enter_${this._state}`
       const callback = this[enterEventName]
-      callback?.(this)
+      callback?.call(this)
       this.emit(enterEventName, this)
     }
   }
@@ -104,21 +104,21 @@ export default class FSM extends Phaser.Events.EventEmitter {
   }
 
   start(state?: string) {
-    this._state = state
+    this._start = state
     this._prevState = undefined
     this._state = state // 不触发statechange事件
     return this
   }
 
   goto(nextState: string | null) {
-    if (nextState !== null) {
+    if (nextState != null) {
       this.state = nextState
     }
     return this
   }
 
   next() {
-    let nextState: string | null = null
+    let nextState: any
     let getNextState = this[`next_${this.state}`]
     if (getNextState) {
       if (typeof getNextState === 'string') {
@@ -127,7 +127,10 @@ export default class FSM extends Phaser.Events.EventEmitter {
         nextState = getNextState.call(this)
       }
     }
+    // console.log(nextState)
     this.goto(nextState)
+
+    return this
   }
 
   addState(state: IStateConfig)
@@ -170,17 +173,18 @@ export default class FSM extends Phaser.Events.EventEmitter {
   }
 
   exec(name: string, ...args: any[]) {
+    // console.log(`${name}_${this.state}`)
     const fn = this[`${name}_${this.state}`]
     if (!fn) return undefined
-    fn.apply(this, args)
     return fn.apply(this, args)
   }
 
   update(time: number, delta: number) {
+    // debugger
     this.exec('update', time, delta)
   }
   preupdate(time: number, delta: number) {
-    this.exec('prepdate', time, delta)
+    this.exec('preupdate', time, delta)
   }
   postupdate(time: number, delta: number) {
     this.exec('postupdate', time, delta)

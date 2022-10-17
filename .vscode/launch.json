@@ -10,12 +10,12 @@
       "name": "Launch Chrome against localhost",
       "url": "http://localhost:8080",
       "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Debug"
-      //   "sourceMapPathOverrides": {
-      //     "meteor://💻app/*": "${workspaceFolder}/*",
-      //     "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
-      //     "webpack://?:*/*": "${workspaceFolder}/*"
-      //   }
+      "skipFiles": ["!${workspaceFolder}/{src,uidemo}/**"],
+      "sourceMapPathOverrides": {
+        "meteor://💻app/*": "${workspaceFolder}/*",
+        "webpack:///./~/*": "${workspaceFolder}/node_modules/*",
+        "webpack://?:*/*": "${workspaceFolder}/*"
+      }
     }
   ]
 }
